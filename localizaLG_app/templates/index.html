@@ -1,0 +1,17 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa do Google</title>
+    <link rel="stylesheet" href="{% static "style/map.css" %}">
+</head>
+<body onload="initMap()">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDCrjnGQzM1WI73fYpDkS0RjgSEg38q1ZM"></script>
+    <div id="map"></div>
+
+    <script src="{% static "scripts/map.js" %}"></script>
+</body>
+</html>
