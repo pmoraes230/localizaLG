@@ -1,8 +1,8 @@
 from django.urls import path
-from .views import map
+from .views import map, escolas_localization_json
 
 
 urlpatterns = [
     path('', map, name='map'),
-    # path('Escolas-LG/', escolasLG, name='escolas'),
+    path('Escolas-LG/', escolas_localization_json, name='escolas-pontos'),
 ]
