@@ -1,26 +1,100 @@
 function initMap() {
     const map = new google.maps.Map(document.getElementById("map"), {
         center: { lat: -1.458563, lng: -48.490239 },
-        zoom: 2,
+        zoom: 15,
         disableDefaultUI: true,
+        zoomControl: false,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        gestureHandling: "greedy",
         styles: [
-            { elementType: 'geometry', stylers: [{ color: '#eaeaea' }] },
-            { elementType: 'labels.text.fill', stylers: [{ color: '#333' }] },
-            { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#a4c8e1' }] },
-            { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#c0c0c0' }] }
+            { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }]},
+            { elementType: 'labels.icon', stylers: [{ visibility: 'off' }]},
+            { elementType: 'labels.text.fill', stylers: [{ color: '#616161' }]},
+            { elementType: 'labels.text.stroke', stylers: [{ color: '#f5f5f5' }]},
+            { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#dadada' }] },
+            { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }]},
+            { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }]},
+            {
+                featureType: 'administrative.locality',
+                elementType: 'labels.text.fill',
+                stylers: [{ color: '#757575' }]
+            },
+            {
+                featureType: 'poi',
+                elementType: 'geometry',
+                stylers: [{ color: '#eeeeee' }]
+            },
+            {
+                featureType: 'poi',
+                elementType: 'labels.text.fill',
+                stylers: [{ color: '#757575' }]
+            },
+            {
+                featureType: 'poi.park',
+                elementType: 'geometry',
+                stylers: [{ color: '#e5e5e5' }]
+            },
+            {
+                featureType: 'poi.park',
+                elementType: 'labels.text.fill',
+                stylers: [{ color: '#9e9e9e' }]
+            },
+            {
+                featureType: 'road',
+                elementType: 'geometry.fill',
+                stylers: [{ color: '#ffffff' }]
+            },
+            {
+                featureType: 'road',
+                elementType: 'labels.text.fill',
+                stylers: [{ color: '#9e9e9e' }]
+            },
+            {
+                featureType: 'road.arterial',
+                elementType: 'geometry',
+                stylers: [{ color: '#eeeeee' }]
+            },
+            {
+                featureType: 'road.highway',
+                elementType: 'geometry',
+                stylers: [{ color: '#dadada' }]
+            },
+            {
+                featureType: 'road.highway.controlled_access',
+                elementType: 'geometry',
+                stylers: [{ color: '#d4d4d4' }]
+            },
+            {
+                featureType: 'road.local',
+                elementType: 'labels.text.fill',
+                stylers: [{ color: '#616161' }]
+            },
+            {
+                featureType: 'transit',
+                elementType: 'labels.text.fill',
+                stylers: [{ color: '#757575' }]
+            },
+            {
+                featureType: 'water',
+                elementType: 'geometry',
+                stylers: [{ color: '#c9e8fa' }]
+            },
+            {
+                featureType: 'water',
+                elementType: 'labels.text.fill',
+                stylers: [{ color: '#b1d0e3' }]
+            }
         ]
     });
 
-    const infoWindow = new google.maps.InfoWindow();
-    const directionsService = new google.maps.DirectionsService();
-    const directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: true });
-    directionsRenderer.setMap(map);
-
     let userMarker;
 
+    // Função para obter a localização atual do usuário
     function getCurrentLocation(callback) {
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
+            navigator.geolocation.watchPosition(
                 position => {
                     const userLat = position.coords.latitude;
                     const userLng = position.coords.longitude;
@@ -34,86 +108,33 @@ function initMap() {
         }
     }
 
-    function updateRoute(userLat, userLng, destinationLat, destinationLng) {
-        const request = {
-            origin: { lat: userLat, lng: userLng },
-            destination: { lat: destinationLat, lng: destinationLng },
-            travelMode: 'DRIVING'
-        };
+    // Atualiza o marcador e centraliza o mapa
+    getCurrentLocation((userLat, userLng) => {
+        const userPosition = { lat: userLat, lng: userLng };
 
-        directionsService.route(request, (result, status) => {
-            if (status === 'OK') {
-                directionsRenderer.setDirections(result);
-                map.setCenter(result.routes[0].legs[0].end_location);
-            } else {
-                console.error('Erro ao traçar rota:', status);
-            }
-        });
-    }
-
-    // Obtém os parâmetros da URL
-    const urlParams = new URLSearchParams(window.location.search);
-    let destinationLat = parseFloat(urlParams.get('lat'));
-    let destinationLng = parseFloat(urlParams.get('lng'));
-
-    if (!isNaN(destinationLat) && !isNaN(destinationLng)) {
-        getCurrentLocation((userLat, userLng) => {
-            // Cria a rota inicial
-            updateRoute(userLat, userLng, destinationLat, destinationLng);
-
-            // Cria ou atualiza o marcador do usuário
+        if (!userMarker) {
+            // Cria o marcador se ele ainda não existir
             userMarker = new google.maps.Marker({
-                position: { lat: userLat, lng: userLng },
+                position: userPosition,
                 map: map,
                 title: 'Você está aqui',
                 icon: {
                     path: google.maps.SymbolPath.CIRCLE,
-                    scale: 5,
+                    scale: 8,
                     fillColor: '#4285F4',
                     fillOpacity: 1,
-                    strokeWeight: 1,
+                    strokeWeight: 2,
                     strokeColor: '#FFFFFF'
                 }
             });
+        } else {
+            // Atualiza a posição do marcador
+            userMarker.setPosition(userPosition);
+        }
 
-            map.setCenter({ lat: userLat, lng: userLng });
-            map.setZoom(15);
-        });
-    }
-
-    // Carrega os pontos turísticos
-    fetch('/pontos-turisticos/')
-        .then(response => response.json())
-        .then(data => {
-            data.forEach(ponto => {
-                const latitude = parseFloat(ponto.latitude);
-                const longitude = parseFloat(ponto.longitude);
-                const marker = new google.maps.Marker({
-                    position: { lat: latitude, lng: longitude },
-                    map: map,
-                    title: ponto.nome
-                });
-
-                marker.addListener('click', () => {
-                    const contentString = `
-                    <div>
-                        <h3>${ponto.nome}</h3>
-                        <p>Endereço: ${ponto.endereco || 'Não disponível'}</p>
-                        <button id="start-route">Iniciar Rota</button>
-                    </div>`;
-                    infoWindow.setContent(contentString);
-                    infoWindow.open(map, marker);
-
-                    google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
-                        document.getElementById("start-route").addEventListener("click", () => {
-                            updateRoute(userMarker.getPosition().lat(), userMarker.getPosition().lng(), latitude, longitude);
-                            infoWindow.close();
-                        });
-                    });
-                });
-            });
-        })
-        .catch(error => console.error('Erro ao buscar pontos turísticos:', error));
+        // Centraliza o mapa na nova posição
+        map.setCenter(userPosition);
+    });
 }
 
 document.addEventListener("DOMContentLoaded", function () {

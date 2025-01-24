@@ -6,7 +6,10 @@ class Escolas_loc(models.Model):
     address = models.CharField(max_length=100)
     latitude = models.FloatField(unique=True)
     longitude = models.FloatField(unique=True)
-    category_Id = models.ForeignKey(Category, models.DO_NOTHING, db_column='category_Id')
+    # category_Id = models.ForeignKey(Category, models.DO_NOTHING, db_column='category_Id')
+
+    def __str__(self):
+        return self.name
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
