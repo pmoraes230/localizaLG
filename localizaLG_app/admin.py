@@ -1,6 +1,6 @@
 from django.contrib import admin
-from localizaLG_app.models import TbSchoolslg, TbCategory
+from localizaLG_app.models import Tbschoolslg, Tbcategory
 
 # Register your models here.
-admin.site.register(TbSchoolslg)
-admin.site.register(TbCategory)
+admin.site.register(Tbschoolslg)
+admin.site.register(Tbcategory)

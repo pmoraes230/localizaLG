@@ -54,3 +54,16 @@
 #search-results li:hover {
     background: #f9f9f9;
 }   
+
+.center-map-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+    padding: 10px;
+    background-color: #4285F4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}

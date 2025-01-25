@@ -4,6 +4,7 @@ let radarCircle = null;
 let markers = [];
 let directionsService;
 let directionsRenderer;
+let infoWindow;  // Adicionado para o infoWindow
 
 // Inicializa o mapa
 function initMap() {
@@ -25,6 +26,9 @@ function initMap() {
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer();
     directionsRenderer.setMap(map);
+
+    // Inicializa o infoWindow para exibir detalhes
+    infoWindow = new google.maps.InfoWindow();
 
     getCurrentLocation(updateUserMarkerAndMap);
 }
@@ -175,6 +179,68 @@ function getRoute(destLat, destLng) {
         }
     );
 }
+
+fetch('/escolas/')
+    .then(response => response.json())
+    .then(data => {
+        data.forEach(ponto => {
+            const latitude = parseFloat(ponto.latitude);
+            const longitude = parseFloat(ponto.longitude);
+            console.log(latitude, longitude); // Verifique os valores no console
+
+            const categoria = ponto["categorias_id_categorias__nome"];
+            const latLngKey = `${latitude},${longitude}`;
+            const markerIcon = {
+                url: gerarIconeCor(categoria),
+                scaledSize: new google.maps.Size(35, 55),
+                anchor: new google.maps.Point(15, 40)
+            };
+
+            const marker = new google.maps.Marker({
+                position: { lat: latitude, lng: longitude },
+                map: map,
+                title: ponto.nome,
+                category: categoria,
+                icon: markerIcon
+            });
+
+            marker.addListener('click', () => {
+                const contentString = `
+                    <div class="info-window p-3">
+                        <h3 class="info-title text-center">${ponto.name}</h3>
+                        <img src="/media/${ponto.image}" alt="${ponto.name}" class="info-image img-fluid mb-2" />
+                        <div class="content-ponto">
+                        <p><span>Endereço:</span> ${ponto.address || 'Não disponível'}</p>
+                        </div>
+                        <button id="start-route">Iniciar Rota</button>
+                    </div>`;
+                infoWindow.setContent(contentString);
+                infoWindow.open(map, marker);
+
+                google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
+                    document.getElementById("start-route").addEventListener("click", () => {
+                        getRoute(latitude, longitude); // Inicia a rota até a escola
+                        infoWindow.close();
+                    });
+                });
+            });
+
+            markers.push(marker);
+        });
+    })
+    .catch(error => console.error('Erro ao carregar escolas:', error));
+
+document.getElementById('center-map-btn').addEventListener('click', function () {
+    // Exemplo de centralizar no centro do mapa atual
+    const currentCenter = map.getCenter();
+
+    // Ou você pode usar a localização do usuário, por exemplo:
+    // const userPosition = { lat: userLat, lng: userLng }; (onde userLat e userLng são obtidas via geolocalização)
+
+    map.setCenter(currentCenter); // ou userPosition
+    map.setZoom(15); // Para ajustar o zoom se necessário
+});
+
 
 document.addEventListener('DOMContentLoaded', function () {
     initMap();
