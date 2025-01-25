@@ -1,15 +1,18 @@
+// Variáveis globais
 let map;
 let userMarker = null;
 let radarCircle = null;
 let markers = [];
 let directionsService;
 let directionsRenderer;
-let infoWindow;  // Adicionado para o infoWindow
+let infoWindow; // Janela de informações
+let userLat = null;
+let userLng = null;
 
 // Inicializa o mapa
 function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: -1.458563, lng: -48.490239 }, // Ponto inicial
+        center: { lat: -1.458563, lng: -48.490239 },
         zoom: 15,
         disableDefaultUI: true,
         gestureHandling: "greedy",
@@ -27,7 +30,6 @@ function initMap() {
     directionsRenderer = new google.maps.DirectionsRenderer();
     directionsRenderer.setMap(map);
 
-    // Inicializa o infoWindow para exibir detalhes
     infoWindow = new google.maps.InfoWindow();
 
     getCurrentLocation(updateUserMarkerAndMap);
@@ -36,10 +38,10 @@ function initMap() {
 // Obtém localização do usuário
 function getCurrentLocation(callback) {
     if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(
+        navigator.geolocation.getCurrentPosition(
             (position) => {
-                const userLat = position.coords.latitude;
-                const userLng = position.coords.longitude;
+                userLat = position.coords.latitude;
+                userLng = position.coords.longitude;
                 callback(userLat, userLng);
             },
             (error) => {
@@ -94,11 +96,12 @@ function updateUserMarkerAndMap(lat, lng) {
 }
 
 // Adiciona marcador no mapa
-function addMarker(lat, lng, title) {
+function addMarker(lat, lng, title, icon = null) {
     const marker = new google.maps.Marker({
         position: { lat, lng },
         map: map,
         title: title,
+        icon: icon,
     });
     markers.push(marker);
 }
@@ -110,8 +113,8 @@ function clearMarkers() {
 }
 
 // Busca no servidor e exibe resultados
-document.getElementById('search-input').addEventListener('input', function () {
-    const query = this.value.trim();
+function searchHandler() {
+    const query = document.getElementById('search-input').value.trim();
     const resultsContainer = document.getElementById('search-results');
 
     if (query.length < 2) {
@@ -151,77 +154,76 @@ document.getElementById('search-input').addEventListener('input', function () {
             });
         })
         .catch((error) => console.error('Erro na busca:', error));
-});
+}
 
 // Exibe rota até o local
 function getRoute(destLat, destLng) {
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            const userLat = position.coords.latitude;
-            const userLng = position.coords.longitude;
+    if (userLat !== null && userLng !== null) {
+        const request = {
+            origin: { lat: userLat, lng: userLng },
+            destination: { lat: destLat, lng: destLng },
+            travelMode: 'DRIVING',
+        };
 
-            const request = {
-                origin: { lat: userLat, lng: userLng },
-                destination: { lat: destLat, lng: destLng },
-                travelMode: 'DRIVING',
-            };
-
-            directionsService.route(request, (result, status) => {
-                if (status === 'OK') {
-                    directionsRenderer.setDirections(result);
-                } else {
-                    console.error('Erro ao obter rota:', status);
-                }
-            });
-        },
-        (error) => {
-            alert('Erro ao obter localização.');
-        }
-    );
+        directionsService.route(request, (result, status) => {
+            if (status === 'OK') {
+                directionsRenderer.setDirections(result);
+            } else {
+                console.error('Erro ao obter rota:', status);
+            }
+        });
+    } else {
+        alert('Localização do usuário não encontrada.');
+    }
 }
 
-fetch('/escolas/')
+// Carrega pontos da API
+fetch('escolas/')
     .then(response => response.json())
     .then(data => {
         data.forEach(ponto => {
             const latitude = parseFloat(ponto.latitude);
             const longitude = parseFloat(ponto.longitude);
-            console.log(latitude, longitude); // Verifique os valores no console
 
-            const categoria = ponto["categorias_id_categorias__nome"];
-            const latLngKey = `${latitude},${longitude}`;
-            const markerIcon = {
+            if (isNaN(latitude) || isNaN(longitude)) {
+                console.warn(`Coordenadas inválidas para o ponto:`, ponto);
+                return;
+            }
+
+            const categoria = ponto.categorias_id_categorias__nome || 'Categoria desconhecida';
+            const icon = {
                 url: gerarIconeCor(categoria),
                 scaledSize: new google.maps.Size(35, 55),
-                anchor: new google.maps.Point(15, 40)
+                anchor: new google.maps.Point(15, 40),
             };
 
             const marker = new google.maps.Marker({
                 position: { lat: latitude, lng: longitude },
                 map: map,
-                title: ponto.nome,
-                category: categoria,
-                icon: markerIcon
+                title: ponto.name || 'Sem nome',
+                icon: icon,
             });
 
             marker.addListener('click', () => {
                 const contentString = `
-                    <div class="info-window p-3">
-                        <h3 class="info-title text-center">${ponto.name}</h3>
-                        <img src="/media/${ponto.image}" alt="${ponto.name}" class="info-image img-fluid mb-2" />
-                        <div class="content-ponto">
-                        <p><span>Endereço:</span> ${ponto.address || 'Não disponível'}</p>
-                        </div>
-                        <button id="start-route">Iniciar Rota</button>
-                    </div>`;
+                        <div class="info-window">
+                            <h3>${ponto.name || 'Sem nome'}</h3>
+                            <img src="/media/${ponto.image || 'default.jpg'}" alt="Imagem" />
+                            <p>Endereço: ${ponto.address || 'Não disponível'}</p>
+                            <button id="start-route">Iniciar Rota</button>
+                        </div>`;
+
                 infoWindow.setContent(contentString);
                 infoWindow.open(map, marker);
 
                 google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
-                    document.getElementById("start-route").addEventListener("click", () => {
-                        getRoute(latitude, longitude); // Inicia a rota até a escola
-                        infoWindow.close();
-                    });
+                    const startRouteButton = document.getElementById("start-route");
+                    if (startRouteButton) {
+                        startRouteButton.addEventListener("click", () => {
+                            getRoute(latitude, longitude);
+                            infoWindow.close();
+                        });
+                    }
                 });
             });
 
@@ -230,18 +232,17 @@ fetch('/escolas/')
     })
     .catch(error => console.error('Erro ao carregar escolas:', error));
 
-document.getElementById('center-map-btn').addEventListener('click', function () {
-    // Exemplo de centralizar no centro do mapa atual
-    const currentCenter = map.getCenter();
+// Centraliza o mapa no usuário
+function centerMap() {
+    if (userLat !== null && userLng !== null) {
+        map.setCenter({ lat: userLat, lng: userLng });
+        map.setZoom(15);
+    } else {
+        alert('Localização do usuário não encontrada.');
+    }
+}
 
-    // Ou você pode usar a localização do usuário, por exemplo:
-    // const userPosition = { lat: userLat, lng: userLng }; (onde userLat e userLng são obtidas via geolocalização)
-
-    map.setCenter(currentCenter); // ou userPosition
-    map.setZoom(15); // Para ajustar o zoom se necessário
-});
-
-
+// Inicializa os eventos após o DOM carregar
 document.addEventListener('DOMContentLoaded', function () {
     initMap();
 });

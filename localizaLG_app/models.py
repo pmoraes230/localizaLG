@@ -129,6 +129,9 @@ class Tbcategory(models.Model):
     class Meta:
         managed = False
         db_table = 'tbcategory'
+    
+    def __str__(self):
+        return self.name
 
 
 class Tbschoolslg(models.Model):
@@ -143,3 +146,6 @@ class Tbschoolslg(models.Model):
     class Meta:
         managed = False
         db_table = 'tbschoolslg'
+
+    def __str__(self):
+        return self.name
