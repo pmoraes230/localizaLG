@@ -14,12 +14,12 @@ class TbCategory(models.Model):
 
 
 class TbSchoolslg(models.Model):
-    id_schoolslg = models.AutoField(db_column='id_SchoolsLG', primary_key=True)  # Field name made lowercase.
+    id_schoolslg = models.AutoField(db_column='id_SchoolsLG', primary_key=True)
     name = models.CharField(max_length=45)
-    image = models.ImageField(upload_to="")
+    image = models.ImageField(upload_to="images/")
     address = models.CharField(max_length=45)
-    latitude = models.DecimalField(max_digits=30, decimal_places=0)
-    longitude = models.DecimalField(max_digits=50, decimal_places=0)
+    latitude = models.DecimalField(max_digits=30, decimal_places=6)
+    longitude = models.DecimalField(max_digits=50, decimal_places=6)
     id_category = models.ForeignKey(TbCategory, models.DO_NOTHING, db_column='id_category')
 
     class Meta:

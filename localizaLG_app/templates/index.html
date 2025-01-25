@@ -2,21 +2,26 @@
 
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LocalizaLG</title>
     <link rel="stylesheet" href="{% static "style/map.css" %}">
-</head>
-<body>
+  </head>
+  <body>
+    <div id="search-container">
+        <input type="text" id="search-input" placeholder="Digite o nome do local...">
+        <ul id="search-results"></ul>
+    </div>
+
     <div id="map"></div>
 
-    <script 
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDCrjnGQzM1WI73fYpDkS0RjgSEg38q1ZM&callback=initMap&v=weekly" 
-        async 
-        defer>
-    </script>
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDCrjnGQzM1WI73fYpDkS0RjgSEg38q1ZM&callback=initMap&v=weekly"
+      async
+      defer
+    ></script>
 
     <script src="{% static 'scripts/map.js' %}"></script>
-</body>
+  </body>
 </html>

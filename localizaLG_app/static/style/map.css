@@ -5,6 +5,52 @@
 }
 
 #map {
-    height: 100vh; /* Ocupa toda a altura da tela */
-    width: 100%;   /* Ocupa toda a largura da tela */
+    height: 100vh;
+    width: 100%;
+    position: relative;
 }
+
+#search-container {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 400px;
+    width: 100%;
+    z-index: 10;
+}
+
+#search-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#search-results {
+    position: absolute;
+    top: 45px;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    z-index: 10;
+}
+
+#search-results li {
+    padding: 10px;
+    list-style: none;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+#search-results li:hover {
+    background: #f9f9f9;
+}   
