@@ -39,8 +39,8 @@ function getCurrentLocation(callback) {
     if (navigator.geolocation) {
         const options = {
             enableHighAccuracy: true, // Solicita precisão maior
-            timeout: 15000, // Tempo limite de 15 segundos
-            maximumAge: 0 // Força uma nova tentativa de obter a localização, não usa cache
+            timeout: 10000, // Tempo limite de 10 segundos para a geolocalização
+            maximumAge: 0 // Força uma nova tentativa de obter a localização, sem cache
         };
 
         const success = (position) => {
@@ -55,8 +55,12 @@ function getCurrentLocation(callback) {
             if (err.code === err.TIMEOUT) {
                 // Retry se timeout ocorre
                 navigator.geolocation.getCurrentPosition(success, error, options);
+            } else if (err.code === err.PERMISSION_DENIED) {
+                alert('Permissão negada para acessar a localização. Ative as permissões no navegador.');
+            } else if (err.code === err.POSITION_UNAVAILABLE) {
+                alert('Não foi possível obter a localização. Tente novamente mais tarde.');
             } else {
-                alert('Erro ao acessar localização. Verifique suas permissões ou conexão.');
+                alert('Erro desconhecido ao acessar localização.');
             }
         };
 
