@@ -299,7 +299,7 @@ function initAutocomplete() {
 
     const autocomplete = new google.maps.places.Autocomplete(input, {
         types: ['geocode'], // Limita a busca a endereços
-        componentRestrictions: { country: 'BR'}, // Restringe a busca ao Brasil e ao estado do Pará
+        componentRestrictions: { country: 'BR'}, // Restringe a busca ao Brasil
     });
 
     autocomplete.addListener('place_changed', function () {
