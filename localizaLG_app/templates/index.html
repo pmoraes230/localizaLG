@@ -4,6 +4,7 @@
 <html lang="pt-br">
   <head>
     <meta charset="UTF-8" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LocalizaLG</title>
     <link rel="stylesheet" href="{% static "style/map.css" %}">
@@ -14,12 +15,12 @@
         <ul id="search-results"></ul>
     </div>
 
-    <button id="center-map-btn" class="center-map-btn">Centralizar Mapa</button>
+    <button id="center-map-btn" onclick="centerMap()" class="center-map-btn">Centralizar Mapa</button>
 
     <div id="map"></div>
 
     <script
-      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDCrjnGQzM1WI73fYpDkS0RjgSEg38q1ZM&callback=initMap&v=weekly"
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDCrjnGQzM1WI73fYpDkS0RjgSEg38q1ZM&libraries=places&callback=initMap&v=weekly"
       async
       defer
     ></script>

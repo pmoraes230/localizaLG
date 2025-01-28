@@ -1,8 +1,8 @@
-// Variáveis globais
 let map;
 let userMarker = null;
 let radarCircle = null;
-let markers = [];
+let markers = []; // Marcadores da API
+let apiMarkers = []; // Marcadores carregados da API
 let directionsService;
 let directionsRenderer;
 let infoWindow; // Janela de informações
@@ -29,29 +29,41 @@ function initMap() {
     directionsService = new google.maps.DirectionsService();
     directionsRenderer = new google.maps.DirectionsRenderer();
     directionsRenderer.setMap(map);
-
     infoWindow = new google.maps.InfoWindow();
-
     getCurrentLocation(updateUserMarkerAndMap);
+    initAutocomplete();
 }
 
 // Obtém localização do usuário
 function getCurrentLocation(callback) {
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                userLat = position.coords.latitude;
-                userLng = position.coords.longitude;
-                callback(userLat, userLng);
-            },
-            (error) => {
-                alert('Erro ao acessar localização.');
-                console.error(error);
-            },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-        );
+        const options = {
+            enableHighAccuracy: true, // Solicita precisão maior
+            timeout: 15000, // Tempo limite de 15 segundos
+            maximumAge: 0 // Força uma nova tentativa de obter a localização, não usa cache
+        };
+
+        const success = (position) => {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            callback(userLat, userLng);
+        };
+
+        const error = (err) => {
+            console.error('Erro ao acessar localização:', err);
+
+            if (err.code === err.TIMEOUT) {
+                // Retry se timeout ocorre
+                navigator.geolocation.getCurrentPosition(success, error, options);
+            } else {
+                alert('Erro ao acessar localização. Verifique suas permissões ou conexão.');
+            }
+        };
+
+        // Solicita a localização
+        navigator.geolocation.getCurrentPosition(success, error, options);
     } else {
-        alert('Geolocalização não suportada.');
+        alert('Geolocalização não suportada neste navegador.');
     }
 }
 
@@ -109,7 +121,9 @@ function addMarker(lat, lng, title, icon = null) {
 // Limpa os marcadores
 function clearMarkers() {
     markers.forEach((marker) => marker.setMap(null));
+    apiMarkers.forEach((marker) => marker.setMap(null)); // Limpar os marcadores da API
     markers = [];
+    apiMarkers = []; // Limpar lista de marcadores da API
 }
 
 // Busca no servidor e exibe resultados
@@ -166,6 +180,13 @@ function getRoute(destLat, destLng) {
             travelMode: 'DRIVING',
         };
 
+        // Configura o DirectionsRenderer para não exibir os marcadores padrão
+        directionsRenderer.setOptions({
+            markerOptions: {
+                visible: false // Não exibe os marcadores de origem e destino
+            }
+        });
+
         directionsService.route(request, (result, status) => {
             if (status === 'OK') {
                 directionsRenderer.setDirections(result);
@@ -193,6 +214,7 @@ function loadMarkers() {
                     return;
                 }
 
+                // Comente o código abaixo se você não quiser que os outros pins apareçam
                 const marker = new google.maps.Marker({
                     position: { lat: latitude, lng: longitude },
                     map: map,
@@ -240,10 +262,84 @@ initMap = (function (originalInitMap) {
 function centerMap() {
     if (userLat !== null && userLng !== null) {
         map.setCenter({ lat: userLat, lng: userLng });
-        map.setZoom(15);
+        map.setZoom(15);  // Ajuste o nível de zoom conforme necessário
     } else {
-        alert('Localização do usuário não encontrada.');
+        // Se a localização do usuário não for encontrada, tenta obter a posição atual novamente
+        getCurrentLocation(function(lat, lng) {
+            userLat = lat;
+            userLng = lng;
+            map.setCenter({ lat: userLat, lng: userLng });
+            map.setZoom(15);
+        });
     }
+}
+
+function initAutocomplete() {
+    const input = document.getElementById('search-input');
+    const resultsContainer = document.getElementById('search-results');
+
+    if (!input) {
+        console.error('Elemento de input não encontrado.');
+        return;
+    }
+
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+        types: ['geocode'], // Limita a busca a endereços
+        componentRestrictions: { country: 'BR', administrativeArea: 'PA' }, // Restringe a busca ao Brasil e ao estado do Pará
+    });
+
+    autocomplete.addListener('place_changed', function () {
+        const place = autocomplete.getPlace();
+
+        if (!place.geometry) {
+            console.warn('Nenhum resultado encontrado para o local selecionado.');
+            return;
+        }
+
+        map.setCenter(place.geometry.location);
+        map.setZoom(15);
+    });
+
+    input.addEventListener('input', function () {
+        const query = input.value.trim();
+
+        if (query.length < 2) {
+            resultsContainer.style.display = 'none';
+            return;
+        }
+
+        const service = new google.maps.places.PlacesService(map);
+        service.textSearch({ query: query }, function (results, status) {
+            resultsContainer.innerHTML = '';
+            if (status === google.maps.places.PlacesServiceStatus.OK) {
+                if (results.length === 0) {
+                    resultsContainer.innerHTML = '<li>Nenhum resultado encontrado</li>';
+                    resultsContainer.style.display = 'block';
+                    return;
+                }
+
+                resultsContainer.style.display = 'block';
+
+                results.forEach(function (result) {
+                    const li = document.createElement('li');
+                    li.textContent = result.name;
+                    li.style.cursor = 'pointer';
+
+                    li.addEventListener('click', function () {
+                        map.setCenter(result.geometry.location);
+                        map.setZoom(15);
+                        resultsContainer.style.display = 'none';
+                    });
+
+                    resultsContainer.appendChild(li);
+                });
+            } else {
+                console.error('Erro ao buscar locais:', status);
+                resultsContainer.innerHTML = '<li>Erro ao carregar resultados</li>';
+                resultsContainer.style.display = 'block';
+            }
+        });
+    });
 }
 
 // Inicializa os eventos após o DOM carregar
