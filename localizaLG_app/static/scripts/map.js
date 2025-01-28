@@ -26,7 +26,7 @@ function initMap() {
         ]
     });
 
-    directionsService = new google.maps.DirectionsService();
+    directionsService = new google.maps.DirectionsService(); 
     directionsRenderer = new google.maps.DirectionsRenderer();
     directionsRenderer.setMap(map);
     infoWindow = new google.maps.InfoWindow();
@@ -214,18 +214,28 @@ function loadMarkers() {
                     return;
                 }
 
-                // Comente o código abaixo se você não quiser que os outros pins apareçam
+                // Define a URL da imagem do marcador
+                const markerImage = `/media/${ponto.image || 'default.jpg'}`;
+
+                // Cria o marcador com a imagem customizada
                 const marker = new google.maps.Marker({
                     position: { lat: latitude, lng: longitude },
                     map: map,
                     title: ponto.name || 'Sem nome',
+                    icon: {
+                        url: markerImage,
+                        scaledSize: new google.maps.Size(40, 40),  // Tamanho reduzido do ícone
+                        origin: new google.maps.Point(0, 0),
+                        anchor: new google.maps.Point(20, 40)  // Posição do marcador (ajustado para a base)
+                    },
                 });
 
+                // Adiciona um InfoWindow com o nome e imagem ao clicar no marcador
                 marker.addListener('click', () => {
                     const contentString = `
                     <div class="info-window">
                         <h3>${ponto.name || 'Sem nome'}</h3>
-                        <img src="/media/${ponto.image || 'default.jpg'}" alt="Imagem" />
+                        <img src="${markerImage}" alt="Imagem" style="width: 100px; height: 100px;" />
                         <p>Endereço: ${ponto.address || 'Não disponível'}</p>
                         <button id="start-route">Iniciar Rota</button>
                     </div>`;
@@ -285,7 +295,7 @@ function initAutocomplete() {
 
     const autocomplete = new google.maps.places.Autocomplete(input, {
         types: ['geocode'], // Limita a busca a endereços
-        componentRestrictions: { country: 'BR', administrativeArea: 'PA' }, // Restringe a busca ao Brasil e ao estado do Pará
+        componentRestrictions: { country: 'BR'}, // Restringe a busca ao Brasil e ao estado do Pará
     });
 
     autocomplete.addListener('place_changed', function () {
@@ -310,7 +320,7 @@ function initAutocomplete() {
 
         const service = new google.maps.places.PlacesService(map);
         service.textSearch({ query: query }, function (results, status) {
-            resultsContainer.innerHTML = '';
+            resultsContainer.innerHTML = ''; // Limpar resultados anteriores
             if (status === google.maps.places.PlacesServiceStatus.OK) {
                 if (results.length === 0) {
                     resultsContainer.innerHTML = '<li>Nenhum resultado encontrado</li>';
@@ -334,13 +344,29 @@ function initAutocomplete() {
                     resultsContainer.appendChild(li);
                 });
             } else {
+                // Tratar os erros de forma controlada
                 console.error('Erro ao buscar locais:', status);
                 resultsContainer.innerHTML = '<li>Erro ao carregar resultados</li>';
+                resultsContainer.style.display = 'block';
+
+                // Mensagens de erro específicas para diferentes status
+                if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+                    resultsContainer.innerHTML = '<li>Nenhum resultado encontrado</li>';
+                } else if (status === google.maps.places.PlacesServiceStatus.INVALID_REQUEST) {
+                    resultsContainer.innerHTML = '<li>Erro de solicitação inválida</li>';
+                } else if (status === google.maps.places.PlacesServiceStatus.OVER_QUERY_LIMIT) {
+                    resultsContainer.innerHTML = '<li>Limite de consultas excedido, tente novamente mais tarde.</li>';
+                } else if (status === google.maps.places.PlacesServiceStatus.REQUEST_DENIED) {
+                    resultsContainer.innerHTML = '<li>Erro de permissão, verifique a chave da API.</li>';
+                } else if (status === google.maps.places.PlacesServiceStatus.UNKNOWN_ERROR) {
+                    resultsContainer.innerHTML = '<li>Erro desconhecido ao carregar resultados.</li>';
+                }
                 resultsContainer.style.display = 'block';
             }
         });
     });
 }
+
 
 // Inicializa os eventos após o DOM carregar
 document.addEventListener('DOMContentLoaded', function () {
