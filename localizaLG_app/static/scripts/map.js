@@ -129,7 +129,8 @@ function searchHandler() {
             resultsContainer.innerHTML = '';
 
             if (results.length === 0) {
-                resultsContainer.style.display = 'none';
+                resultsContainer.innerHTML = '<li>Nenhum resultado encontrado</li>';
+                resultsContainer.style.display = 'block';
                 return;
             }
 
@@ -178,59 +179,62 @@ function getRoute(destLat, destLng) {
 }
 
 // Carrega pontos da API
-fetch('escolas/')
-    .then(response => response.json())
-    .then(data => {
-        data.forEach(ponto => {
-            const latitude = parseFloat(ponto.latitude);
-            const longitude = parseFloat(ponto.longitude);
+function loadMarkers() {
+    // Carrega pontos da API
+    fetch('/escolas/')
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(ponto => {
+                const latitude = parseFloat(ponto.latitude);
+                const longitude = parseFloat(ponto.longitude);
 
-            if (isNaN(latitude) || isNaN(longitude)) {
-                console.warn(`Coordenadas inválidas para o ponto:`, ponto);
-                return;
-            }
+                if (isNaN(latitude) || isNaN(longitude)) {
+                    console.warn(`Coordenadas inválidas para o ponto:`, ponto);
+                    return;
+                }
 
-            const categoria = ponto.categorias_id_categorias__nome || 'Categoria desconhecida';
-            const icon = {
-                url: gerarIconeCor(categoria),
-                scaledSize: new google.maps.Size(35, 55),
-                anchor: new google.maps.Point(15, 40),
-            };
-
-            const marker = new google.maps.Marker({
-                position: { lat: latitude, lng: longitude },
-                map: map,
-                title: ponto.name || 'Sem nome',
-                icon: icon,
-            });
-
-            marker.addListener('click', () => {
-                const contentString = `
-                        <div class="info-window">
-                            <h3>${ponto.name || 'Sem nome'}</h3>
-                            <img src="/media/${ponto.image || 'default.jpg'}" alt="Imagem" />
-                            <p>Endereço: ${ponto.address || 'Não disponível'}</p>
-                            <button id="start-route">Iniciar Rota</button>
-                        </div>`;
-
-                infoWindow.setContent(contentString);
-                infoWindow.open(map, marker);
-
-                google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
-                    const startRouteButton = document.getElementById("start-route");
-                    if (startRouteButton) {
-                        startRouteButton.addEventListener("click", () => {
-                            getRoute(latitude, longitude);
-                            infoWindow.close();
-                        });
-                    }
+                const marker = new google.maps.Marker({
+                    position: { lat: latitude, lng: longitude },
+                    map: map,
+                    title: ponto.name || 'Sem nome',
                 });
-            });
 
-            markers.push(marker);
-        });
-    })
-    .catch(error => console.error('Erro ao carregar escolas:', error));
+                marker.addListener('click', () => {
+                    const contentString = `
+                    <div class="info-window">
+                        <h3>${ponto.name || 'Sem nome'}</h3>
+                        <img src="/media/${ponto.image || 'default.jpg'}" alt="Imagem" />
+                        <p>Endereço: ${ponto.address || 'Não disponível'}</p>
+                        <button id="start-route">Iniciar Rota</button>
+                    </div>`;
+
+                    infoWindow.setContent(contentString);
+                    infoWindow.open(map, marker);
+
+                    google.maps.event.addListenerOnce(infoWindow, 'domready', () => {
+                        const startRouteButton = document.getElementById("start-route");
+                        if (startRouteButton) {
+                            startRouteButton.addEventListener("click", () => {
+                                getRoute(latitude, longitude);
+                                infoWindow.close();
+                            });
+                        }
+                    });
+                });
+
+                markers.push(marker);
+            });
+        })
+        .catch(error => console.error('Erro ao carregar escolas:', error));
+}
+
+// Chama a função para carregar os marcadores após inicializar o mapa
+initMap = (function (originalInitMap) {
+    return function () {
+        originalInitMap();
+        loadMarkers();
+    };
+})(initMap);
 
 // Centraliza o mapa no usuário
 function centerMap() {
